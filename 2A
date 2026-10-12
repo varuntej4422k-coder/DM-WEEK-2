@@ -1,0 +1,71 @@
+import weka.core.Instances;
+import weka.core.converters.ConverterUtils.DataSource;
+import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.Discretize;
+import weka.filters.unsupervised.instance.Resample;
+import weka.associations.Apriori;
+
+public class WekaPreprocessingApriori {
+
+    public static void main(String[] args) throws Exception {
+
+        String[] datasets = {
+            "weather.nominal",
+            "iris",
+            "glass"
+        };
+
+        for (String file : datasets) {
+
+            System.out.println("\n==========================");
+            System.out.println("Dataset: " + file);
+            System.out.println("==========================");
+
+            // Load dataset
+            Instances data =
+                new DataSource(file).getDataSet();
+
+            System.out.println("Original Instances: "
+                    + data.numInstances());
+            System.out.println("Original Attributes: "
+                    + data.numAttributes());
+
+            // Discretization
+            Discretize discretize = new Discretize();
+            discretize.setInputFormat(data);
+
+            Instances discretizedData =
+                Filter.useFilter(data, discretize);
+
+            System.out.println("\nAfter Discretization:");
+            System.out.println("Instances: "
+                    + discretizedData.numInstances());
+            System.out.println("Attributes: "
+                    + discretizedData.numAttributes());
+
+            // Resampling
+            Resample resample = new Resample();
+            resample.setRandomSeed(1);
+            resample.setSampleSizePercent(100);
+            resample.setInputFormat(discretizedData);
+
+            Instances resampledData =
+                Filter.useFilter(discretizedData, resample);
+
+            System.out.println("\nAfter Resampling:");
+            System.out.println("Instances: "
+                    + resampledData.numInstances());
+
+            // Apriori Association Rule Mining
+            Apriori apriori = new Apriori();
+            apriori.setNumRules(10);
+            apriori.setLowerBoundMinSupport(0.1);
+            apriori.setMinMetric(0.8);
+
+            apriori.buildAssociations(resampledData);
+
+            System.out.println("\nApriori Association Rules:");
+            System.out.println(apriori);
+        }
+    }
+}
